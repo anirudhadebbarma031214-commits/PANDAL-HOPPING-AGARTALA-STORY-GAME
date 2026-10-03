@@ -25,7 +25,7 @@ jobs:
         run: |
           mkdir -p $HOME/android-sdk/cmdline-tools
           cd $HOME/android-sdk/cmdline-tools
-          curl -sS -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          curl -sSL -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip -q cmdline-tools.zip
           mv cmdline-tools latest
           rm cmdline-tools.zip
@@ -47,14 +47,14 @@ jobs:
         run: |
           mkdir -p $HOME/godot
           cd $HOME/godot
-          curl -sS -o godot.zip https://downloads.tuxfamily.org/godotengine/4.3/Godot_v4.3-stable_linux.x86_64.zip
+          curl -sSL -o godot.zip https://downloads.tuxfamily.org/godotengine/4.3/Godot_v4.3-stable_linux.x86_64.zip
           unzip -q godot.zip
           mv Godot_v4.3-stable_linux.x86_64 godot
           chmod +x godot
           echo "$HOME/godot" >> $GITHUB_PATH
 
           mkdir -p ~/.local/share/godot/export_templates/4.3.stable
-          curl -sS -o templates.tpz https://downloads.tuxfamily.org/godotengine/4.3/Godot_v4.3-stable_export_templates.tpz
+          curl -sSL -o templates.tpz https://downloads.tuxfamily.org/godotengine/4.3/Godot_v4.3-stable_export_templates.tpz
           unzip -q templates.tpz
           mv templates/* ~/.local/share/godot/export_templates/4.3.stable/
           rm -rf templates templates.tpz
