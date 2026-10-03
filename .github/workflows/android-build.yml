@@ -65,10 +65,8 @@ jobs:
           mv templates/* ~/.local/share/godot/export_templates/4.3.stable/
           rm -rf templates templates.tpz godot.zip
 
-      - name: Configure Godot Global Settings
+      - name: Configure Godot Global Editor Settings
         run: |
-          godot --headless --editor --quit || true
-
           GODOT_CONFIG_DIR="$HOME/.config/godot"
           mkdir -p "$GODOT_CONFIG_DIR"
 
