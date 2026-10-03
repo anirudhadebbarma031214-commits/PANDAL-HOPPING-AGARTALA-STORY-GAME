@@ -45,7 +45,7 @@ jobs:
         run: |
           yes | sdkmanager --licenses > /dev/null || true
           sdkmanager --version
-          sdkmanager "platforms;android-35" "build-tools;35.0.1" "ndk;28.1.13356709" "cmake;3.10.2.4988404" "platform-tools"
+          sdkmanager "platforms;android-35" "platforms;android-34" "build-tools;35.0.1" "ndk;28.1.13356709" "cmake;3.10.2.4988404" "platform-tools"
           adb version
 
       - name: Set up Godot Engine & Export Templates (v4.3.stable)
