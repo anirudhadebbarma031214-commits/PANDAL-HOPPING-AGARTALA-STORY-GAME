@@ -2,9 +2,9 @@ name: Android Build
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
   workflow_dispatch:
 
 jobs:
@@ -18,44 +18,39 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
-      - name: Generate Android Debug Keystore
+      - name: Prepare Android SDK
+        shell: bash
         run: |
-          mkdir -p "$HOME/.android"
-          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore "$HOME/.android/debug.keystore" -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
-
-      - name: Set up Android SDK
-        run: |
-          set -e
-          SDK="$HOME/android-sdk"
-          mkdir -p "$SDK/cmdline-tools"
-          cd "$SDK/cmdline-tools"
-          curl -fsSL -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          rm -rf latest /tmp/android-cmdline
-          mkdir -p /tmp/android-cmdline
-          unzip -q cmdline-tools.zip -d /tmp/android-cmdline
-          mv /tmp/android-cmdline/cmdline-tools latest
-          rm -f cmdline-tools.zip
+          set -euxo pipefail
+          SDK="/usr/local/lib/android/sdk"
+          test -d "$SDK"
+          SDKMANAGER="$(find "$SDK/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -n "$SDKMANAGER"
           echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
-          echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
           echo "$SDK/platform-tools" >> "$GITHUB_PATH"
-          export ANDROID_HOME="$SDK"
-          export ANDROID_SDK_ROOT="$SDK"
-          export PATH="$SDK/cmdline-tools/latest/bin:$SDK/platform-tools:$PATH"
-          yes | sdkmanager --sdk_root="$SDK" --licenses >/dev/null || true
-          sdkmanager --sdk_root="$SDK" "platform-tools" "platforms;android-35" "build-tools;35.0.1" "ndk;28.1.13356709" "cmake;3.10.2.4988404"
-          echo "=== VERIFY ANDROID SDK ==="
-          test -d "$SDK/platforms/android-35"
-          test -d "$SDK/build-tools/35.0.1"
+          yes | "$SDKMANAGER" --sdk_root="$SDK" --licenses >/dev/null || true
+          "$SDKMANAGER" --sdk_root="$SDK" "platform-tools" "platforms;android-35" "build-tools;35.0.1"
+          test -x "$SDK/platform-tools/adb"
           test -x "$SDK/build-tools/35.0.1/aapt2"
-          ls -la "$SDK/build-tools/35.0.1"
-          ls -la "$SDK/platforms/android-35"
+          test -d "$SDK/platforms/android-35"
 
-      - name: Set up Godot 4.3 and matching export templates
+      - name: Generate Android Debug Keystore
+        shell: bash
         run: |
-          set -e
+          set -euxo pipefail
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android               -keystore "$HOME/.android/debug.keystore" -storepass android               -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          fi
+
+      - name: Set up Godot 4.3 and export templates
+        shell: bash
+        run: |
+          set -euxo pipefail
           mkdir -p "$HOME/godot"
           cd "$HOME/godot"
           curl -fsSL -o godot.zip https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
@@ -71,40 +66,42 @@ jobs:
           cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.3.stable/"
           echo "4.3.stable" > "$HOME/.local/share/godot/export_templates/4.3.stable/version.txt"
 
-      - name: Configure Godot Android SDK paths
+      - name: Configure Godot Android paths
+        shell: bash
         run: |
-          set -e
+          set -euxo pipefail
           mkdir -p "$HOME/.config/godot"
           cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
-[gd_resource type="EditorSettings" format=3]
+          [gd_resource type="EditorSettings" format=3]
 
-[resource]
-export/android/android_sdk_path = "$ANDROID_HOME"
-export/android/java_sdk_path = "$JAVA_HOME"
-export/android/debug_keystore = "$HOME/.android/debug.keystore"
-export/android/debug_keystore_user = "androiddebugkey"
-export/android/debug_keystore_pass = "android"
-EOF
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/debug_keystore = "$HOME/.android/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
           cat "$HOME/.config/godot/editor_settings-4.tres"
 
-      - name: Import Godot Project
-        run: |
-          set -e
-          godot --headless --path "$GITHUB_WORKSPACE" --editor --quit
+      - name: Import Godot project
+        run: godot --headless --path "$GITHUB_WORKSPACE" --editor --quit
 
       - name: Export Android APK
+        shell: bash
         run: |
-          set -e
+          set -euxo pipefail
           mkdir -p "$GITHUB_WORKSPACE/build"
+          test -x "$ANDROID_HOME/build-tools/35.0.1/aapt2"
+          test -d "$ANDROID_HOME/platforms/android-35"
           godot --headless --path "$GITHUB_WORKSPACE" --export-debug "Android" "$GITHUB_WORKSPACE/build/PandalHopping.apk"
 
-      - name: Verify APK Creation
+      - name: Verify APK
         run: |
-          set -e
+          set -euxo pipefail
           test -s "$GITHUB_WORKSPACE/build/PandalHopping.apk"
           ls -lh "$GITHUB_WORKSPACE/build/PandalHopping.apk"
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: PandalHopping-APK
