@@ -17,25 +17,22 @@ jobs:
 
       - name: Android SDK
         run: |
-          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
-          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          set -e
           SDK="/usr/local/lib/android/sdk"
-          SDKMANAGER="$(find "$SDK/cmdline-tools" -type f -name sdkmanager -print -quit 2>/dev/null || true)"
-          if [ -z "$SDKMANAGER" ]; then
-            SDKMANAGER="$(find /opt/android-sdk /usr/lib/android-sdk "$HOME" -type f -name sdkmanager -print -quit 2>/dev/null || true)"
-          fi
-          if [ -z "$SDKMANAGER" ]; then
-            echo "sdkmanager was not found on this GitHub runner"
-            find /usr/local/lib/android/sdk /opt/android-sdk /usr/lib/android-sdk -maxdepth 5 -type f -name sdkmanager -print 2>/dev/null || true
-            exit 1
-          fi
-          SDKMANAGER_DIR="$(dirname "$SDKMANAGER")"
-          echo "$SDKMANAGER_DIR" >> "$GITHUB_PATH"
+          mkdir -p "$SDK/cmdline-tools"
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdline-tools.zip
+          rm -rf "$SDK/cmdline-tools/latest"
+          mkdir -p "$SDK/cmdline-tools/latest"
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/android-cmdline
+          mv /tmp/android-cmdline/cmdline-tools/* "$SDK/cmdline-tools/latest/"
+          export PATH="$SDK/cmdline-tools/latest/bin:$SDK/platform-tools:$PATH"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
           echo "$SDK/platform-tools" >> "$GITHUB_PATH"
-          echo "Using sdkmanager: $SDKMANAGER"
-          "$SDKMANAGER" --sdk_root="$SDK" "platform-tools" "platforms;android-35" "build-tools;35.0.1" "ndk;28.1.13356709" "cmake;3.10.2.4988404"
-          yes | "$SDKMANAGER" --sdk_root="$SDK" --licenses || true
-          "$SDK/platform-tools/adb" version
+          yes | sdkmanager --sdk_root="$SDK" --licenses >/dev/null || true
+          sdkmanager --sdk_root="$SDK" "platform-tools" "platforms;android-35" "build-tools;35.0.1" "ndk;28.1.13356709" "cmake;3.10.2.4988404"
+          adb version
 
       - name: Godot
         run: |
