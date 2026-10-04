@@ -21,7 +21,7 @@ func _ready():
     create_ui()
 
 func mat(color: Color, roughness := 0.65, metallic := 0.0):
-    var m := StandardMaterial3D.new()
+    var m: StandardMaterial3D = StandardMaterial3D.new()
     m.albedo_color = color
     m.roughness = roughness
     m.metallic = metallic
@@ -57,11 +57,11 @@ func mesh_cylinder(radius: float, height: float, position: Vector3, material: Ma
     return mi
 
 func create_world():
-    var we := WorldEnvironment.new()
-    var env := Environment.new()
+    var we: WorldEnvironment = WorldEnvironment.new()
+    var env: Environment = Environment.new()
     env.background_mode = Environment.BG_SKY
-    var sky := Sky.new()
-    var sky_mat := ProceduralSkyMaterial.new()
+    var sky: Sky = Sky.new()
+    var sky_mat: ProceduralSkyMaterial = ProceduralSkyMaterial.new()
     sky_mat.sky_top_color = Color("#08152b")
     sky_mat.sky_horizon_color = Color("#b7a88f")
     sky_mat.ground_bottom_color = Color("#111613")
@@ -83,7 +83,7 @@ func create_world():
     we.environment = env
     add_child(we)
 
-    var sun := DirectionalLight3D.new()
+    var sun: DirectionalLight3D = DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-48, -28, 0)
     sun.light_color = Color("#fff0cf")
     sun.light_energy = 1.8
@@ -126,7 +126,7 @@ func create_world():
     create_road_details()
 
 func create_detailed_building(n: String, pos: Vector3, size: Vector3, base_color: Color):
-    var root := Node3D.new()
+    var root: Node3D = Node3D.new()
     root.name = n
     root.position = pos
     add_child(root)
@@ -142,13 +142,13 @@ func create_detailed_building(n: String, pos: Vector3, size: Vector3, base_color
         var windows := max(2, int(size.x / 3.2))
         for w in range(windows):
             var x := -size.x * 0.5 + 1.5 + w * ((size.x - 3.0) / max(1, windows - 1))
-            var glass := mat(Color("#183044"), 0.16, 0.25)
+            var glass: StandardMaterial3D = mat(Color("#183044"), 0.16, 0.25)
             mesh_box(Vector3(1.45, 1.15, 0.08), Vector3(x, y, -size.z * 0.505), glass, root)
             mesh_box(Vector3(0.10, 1.35, 0.10), Vector3(x - 0.76, y, -size.z * 0.54), mat(Color("#a7a39b"), 0.45), root)
             mesh_box(Vector3(0.10, 1.35, 0.10), Vector3(x + 0.76, y, -size.z * 0.54), mat(Color("#a7a39b"), 0.45), root)
 
     # Ground-level storefronts.
-    var sign := mesh_box(Vector3(size.x * 0.68, 0.65, 0.10), Vector3(0, 1.35, -size.z * 0.54), emissive(Color("#274b68"), 0.8), root)
+    var sign: MeshInstance3D = mesh_box(Vector3(size.x * 0.68, 0.65, 0.10), Vector3(0, 1.35, -size.z * 0.54), emissive(Color("#274b68"), 0.8), root)
     sign.name = "IlluminatedSign"
 
     # Awning and entrance.
@@ -184,7 +184,7 @@ func create_street_lights():
         for z in range(-75, 76, 20):
             mesh_cylinder(0.09, 6.0, Vector3(x,3.0,z), mat(Color("#25292c"), 0.35, 0.65))
             mesh_box(Vector3(1.2,0.16,0.16), Vector3(x + (1.0 if x < 0 else -1.0), 5.8, z), mat(Color("#25292c"), 0.35, 0.65))
-            var lamp := OmniLight3D.new()
+            var lamp: OmniLight3D = OmniLight3D.new()
             lamp.position = Vector3(x + (1.5 if x < 0 else -1.5), 5.6, z)
             lamp.light_color = Color("#ffd9a0")
             lamp.light_energy = 3.2
@@ -208,8 +208,8 @@ func create_car(pos: Vector3, scorpio := false):
     mesh_box(Vector3(2.2, 0.72, 1.45), Vector3(0,1.18,-0.05), mat(Color("#1a2933"),0.12,0.35), root)
     for x in [-1.25,1.25]:
         for z in [-0.63,0.63]:
-            var wheel := MeshInstance3D.new()
-            var wm := CylinderMesh.new()
+            var wheel: MeshInstance3D = MeshInstance3D.new()
+            var wm: CylinderMesh = CylinderMesh.new()
             wm.top_radius = 0.38
             wm.bottom_radius = 0.38
             wm.height = 0.22
@@ -230,13 +230,13 @@ func create_player():
     player.name = "Player"
 
     # Layered human-shaped prototype rather than a single block.
-    var body := Node3D.new()
+    var body: Node3D = Node3D.new()
     player.add_child(body)
     mesh_cylinder(0.38, 1.05, Vector3(0,1.05,0), mat(Color("#26384d"),0.62), body)
     mesh_cylinder(0.22, 0.45, Vector3(0,1.75,0), mat(Color("#a86f4f"),0.7), body)
 
-    var head := MeshInstance3D.new()
-    var sphere := SphereMesh.new()
+    var head: MeshInstance3D = MeshInstance3D.new()
+    var sphere: SphereMesh = SphereMesh.new()
     sphere.radius = 0.24
     sphere.height = 0.48
     sphere.material = mat(Color("#a86f4f"),0.72)
@@ -248,8 +248,8 @@ func create_player():
         mesh_cylinder(0.10, 0.85, Vector3(x,0.38,0), mat(Color("#171b22"),0.75), body)
         mesh_cylinder(0.10, 0.85, Vector3(x,1.05,0), mat(Color("#314762"),0.7), body)
 
-    var shape := CollisionShape3D.new()
-    var cs := CapsuleShape3D.new()
+    var shape: CollisionShape3D = CollisionShape3D.new()
+    var cs: CapsuleShape3D = CapsuleShape3D.new()
     cs.height = 2.0
     cs.radius = 0.38
     shape.shape = cs
@@ -310,24 +310,24 @@ func _input(event):
         look_input = event.relative/70.0
 
 func create_ui():
-    var layer := CanvasLayer.new()
+    var layer: CanvasLayer = CanvasLayer.new()
     add_child(layer)
 
-    var title := Label.new()
+    var title: Label = Label.new()
     title.text = "PANDAL HOPPING\nAN AGARTALA STORY"
     title.position = Vector2(28,24)
     title.add_theme_font_size_override("font_size",24)
     title.modulate = Color("#f4f1e8")
     layer.add_child(title)
 
-    var hint := Label.new()
+    var hint: Label = Label.new()
     hint.text = "3D PROTOTYPE • BADHARGHAT / AGARTALA\nTouch left to move • Touch right to look"
     hint.position = Vector2(28,88)
     hint.add_theme_font_size_override("font_size",14)
     hint.modulate = Color("#c4ccd0")
     layer.add_child(hint)
 
-    var brand := Label.new()
+    var brand: Label = Label.new()
     brand.text = "A GAME BY ANI STUDIO"
     brand.position = Vector2(28,150)
     brand.add_theme_font_size_override("font_size",12)
