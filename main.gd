@@ -160,7 +160,6 @@ func create_street_lights():
 			pm.height = 5.5
 			pm.material = StandardMaterial3D.new()
 			pm.material.albedo_color = Color("#24272b")
-			pm.mesh = pm
 			pole.mesh = pm
 			pole.position = Vector3(x,2.75,z)
 			add_child(pole)
