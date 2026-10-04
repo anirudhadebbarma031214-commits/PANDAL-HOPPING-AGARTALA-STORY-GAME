@@ -185,6 +185,9 @@ func create_environment() -> void:
 
 func create_basic_city() -> void:
     var ground := mat(Color("#3e5141"), 0.98)
+    # Solid floor collision: without this the player falls through the visual ground,
+    # the camera follows them below the map, and Android can appear to show a black screen.
+    create_floor_collision()
     var road := mat(Color("#25282b"), 0.92)
     var sidewalk := mat(Color("#77736b"), 0.86)
     var marking := mat(Color("#e8dfbd"), 0.6)
@@ -216,6 +219,18 @@ func create_basic_city() -> void:
 
     for p in [Vector3(-8,0,20), Vector3(16,0,-19), Vector3(-48,0,-5), Vector3(48,0,5), Vector3(-8,0,-48), Vector3(10,0,48)]:
         create_tree(p)
+
+func create_floor_collision() -> void:
+    var floor_body := StaticBody3D.new()
+    floor_body.name = "WorldFloorCollision"
+    add_child(floor_body)
+
+    var shape_node := CollisionShape3D.new()
+    var shape := BoxShape3D.new()
+    shape.size = Vector3(180.0, 0.4, 180.0)
+    shape_node.shape = shape
+    shape_node.position = Vector3(0, -0.2, 0)
+    floor_body.add_child(shape_node)
 
 func create_building(n: String, pos: Vector3, size: Vector3, color: Color) -> void:
     var root := Node3D.new()
@@ -328,7 +343,7 @@ func create_pedestrians() -> void:
 func create_player() -> void:
     player = CharacterBody3D.new()
     player.name = "Player"
-    player.position = Vector3(0,0.2,8)
+    player.position = Vector3(0,0.05,8)
     add_child(player)
 
     var body := Node3D.new()
@@ -358,6 +373,8 @@ func create_player() -> void:
     camera = Camera3D.new()
     camera.current = true
     camera.fov = 68.0
+    camera.near = 0.05
+    camera.far = 350.0
     camera.position = Vector3(0,1.0,7.2)
     camera_pivot.add_child(camera)
 
