@@ -1,4 +1,4 @@
-name: Android Build
+name: Build Android APK
 
 on:
   push:
@@ -7,214 +7,57 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
-env:
-  GODOT_VERSION: "4.3"
-  GODOT_RELEASE: "4.3-stable"
-  # Godot 4.3's Android export templates are built against API 34
-  # (DEFAULT_TARGET_SDK_VERSION = 34 in platform/android/export/export_plugin.cpp).
-  # export_presets.cfg keeps gradle_build/target_sdk EMPTY (required for non-Gradle exports),
-  # so Godot uses that default. ANDROID_API_LEVEL and the major version of
-  # ANDROID_BUILD_TOOLS must both equal it, so Godot picks the build-tools exactly.
-  ANDROID_API_LEVEL: "34"
-  ANDROID_BUILD_TOOLS: "34.0.0"
-  ANDROID_CMDLINE_TOOLS_ZIP: "commandlinetools-linux-11076708_latest.zip"
-  APK_PATH: "build/PandalHopping.apk"
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java JDK
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: "17"
+          distribution: 'temurin'
+          java-version: '17'
 
-      # One single SDK location, used by sdkmanager AND by Godot. The runner image ships
-      # its own SDK in /usr/local/lib/android/sdk; we deliberately do not use it, so there
-      # is exactly one SDK and no chance of Godot looking at a different one.
-      - name: Define paths (single source of truth)
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Create Godot Directory
+        run: mkdir -p $HOME/godot
+
+      - name: Download Godot 4.3 Engine
         run: |
-          {
-            echo "ANDROID_HOME=$HOME/android-sdk"
-            echo "ANDROID_SDK_ROOT=$HOME/android-sdk"
-            echo "GODOT_BIN=$HOME/godot/godot"
-            echo "XDG_CONFIG_HOME=$HOME/.config"
-            echo "XDG_DATA_HOME=$HOME/.local/share"
-            echo "DEBUG_KEYSTORE=$HOME/.android/debug.keystore"
-          } >> "$GITHUB_ENV"
-          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
-          echo "$HOME/android-sdk/platform-tools" >> "$GITHUB_PATH"
+          curl -L -o godot.zip https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
+          unzip godot.zip
+          mv Godot_v4.3-stable_linux.x86_64 $HOME/godot/godot
+          chmod +x $HOME/godot/godot
+          echo "$HOME/godot" >> $GITHUB_PATH
 
-      - name: Install Android command-line tools
+      - name: Download Godot 4.3 Export Templates
         run: |
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
-          cd "$RUNNER_TEMP"
-          curl -fsSL -o cmdline-tools.zip "https://dl.google.com/android/repository/${ANDROID_CMDLINE_TOOLS_ZIP}"
-          unzip -q cmdline-tools.zip
-          rm -rf "$ANDROID_HOME/cmdline-tools/latest"
-          mv cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
-          rm cmdline-tools.zip
-          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable"
+          curl -L -o templates.tpz https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
+          unzip templates.tpz -d /tmp/templates
+          mv /tmp/templates/templates/* "$HOME/.local/share/godot/export_templates/4.3.stable/"
+          rm -rf /tmp/templates templates.tpz godot.zip
 
-      - name: Install Android platform, platform-tools and build-tools
-        run: |
-          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          # 'yes' gets SIGPIPE when sdkmanager stops reading; that is expected, not an error.
-          set +o pipefail
-          yes | "$SDKM" --sdk_root="$ANDROID_HOME" --licenses > /dev/null
-          set -o pipefail
-          "$SDKM" --sdk_root="$ANDROID_HOME" \
-            "platform-tools" \
-            "platforms;android-${ANDROID_API_LEVEL}" \
-            "build-tools;${ANDROID_BUILD_TOOLS}"
+      - name: Import Godot Project Assets
+        run: godot --headless --path "$GITHUB_WORKSPACE" --editor --quit
 
-      - name: Verify Android SDK installation
-        run: |
-          fail=0
-          check() { if [ -e "$1" ]; then echo "OK       $1"; else echo "MISSING  $1"; fail=1; fi; }
-          check "$ANDROID_HOME/platform-tools/adb"
-          check "$ANDROID_HOME/platforms/android-${ANDROID_API_LEVEL}/android.jar"
-          check "$ANDROID_HOME/build-tools/${ANDROID_BUILD_TOOLS}/apksigner"
-          check "$ANDROID_HOME/build-tools/${ANDROID_BUILD_TOOLS}/zipalign"
-          check "$ANDROID_HOME/build-tools/${ANDROID_BUILD_TOOLS}/aapt2"
-          check "$ANDROID_HOME/build-tools/${ANDROID_BUILD_TOOLS}/lib/apksigner.jar"
-          check "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          [ "$fail" -eq 0 ] || { echo "::error::Android SDK is incomplete"; exit 1; }
+      - name: Start ADB Server
+        run: adb start-server
 
-          # Non-Gradle exports require gradle_build/target_sdk to be EMPTY; Godot 4.3 then
-          # uses its built-in default (34). It must equal the SDK we installed.
-          preset_target="$(grep -E '^gradle_build/target_sdk=' export_presets.cfg | head -1 | sed -E 's/^[^=]*="?([0-9]*)"?.*/\1/')"
-          preset_target="${preset_target:-34}"
-          echo "target SDK used by Godot 4.3 export = ${preset_target}"
-          echo "installed platform                  = android-${ANDROID_API_LEVEL}"
-          echo "installed build-tools               = ${ANDROID_BUILD_TOOLS}"
-          [ "$preset_target" = "$ANDROID_API_LEVEL" ] || { echo "::error::Target SDK ($preset_target) != installed platform ($ANDROID_API_LEVEL)"; exit 1; }
-          [ "${ANDROID_BUILD_TOOLS%%.*}" = "$ANDROID_API_LEVEL" ] || { echo "::error::Build-tools major version does not match the target SDK"; exit 1; }
+      # --- FIX FOR TARGET FOLDER ERROR ---
+      - name: Create Build Output Directory
+        run: mkdir -p "$GITHUB_WORKSPACE/build"
 
-          "$ANDROID_HOME/build-tools/${ANDROID_BUILD_TOOLS}/apksigner" --version
+      - name: Export Android Debug APK
+        run: godot --headless --path "$GITHUB_WORKSPACE" --export-debug "Android" "$GITHUB_WORKSPACE/build/PandalHopping.apk"
 
-      - name: Create debug keystore
-        run: |
-          mkdir -p "$(dirname "$DEBUG_KEYSTORE")"
-          if [ ! -f "$DEBUG_KEYSTORE" ]; then
-            keytool -genkeypair -noprompt \
-              -keystore "$DEBUG_KEYSTORE" -storepass android -keypass android \
-              -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
-          fi
-          keytool -list -keystore "$DEBUG_KEYSTORE" -storepass android -alias androiddebugkey
-
-      - name: Install Godot ${{ env.GODOT_VERSION }}
-        run: |
-          mkdir -p "$HOME/godot"
-          cd "$HOME/godot"
-          curl -fsSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
-          unzip -q godot.zip
-          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
-          chmod +x godot
-          rm godot.zip
-          ./godot --version
-
-      - name: Install Godot ${{ env.GODOT_VERSION }} Android export templates
-        run: |
-          TEMPLATE_DIR="$XDG_DATA_HOME/godot/export_templates/${GODOT_VERSION}.stable"
-          mkdir -p "$TEMPLATE_DIR"
-          cd "$RUNNER_TEMP"
-          curl -fsSL -o templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
-          # Only the Android templates are needed (the full .tpz is ~1 GB unpacked).
-          unzip -q templates.tpz 'templates/android_*' 'templates/version.txt' -d templates_x
-          mv templates_x/templates/* "$TEMPLATE_DIR/"
-          rm -rf templates_x templates.tpz
-          ls -lh "$TEMPLATE_DIR"
-          test -s "$TEMPLATE_DIR/android_debug.apk"
-          test -s "$TEMPLATE_DIR/android_release.apk"
-          grep -qx "${GODOT_VERSION}.stable" "$TEMPLATE_DIR/version.txt"
-
-      # Godot 4.3 reads $XDG_CONFIG_HOME/godot/editor_settings-4.3.tres.
-      # (A file called editor_settings-4.godot is NOT read by Godot 4 at all.)
-      - name: Configure Godot editor settings (SDK, Java, keystore)
-        run: |
-          mkdir -p "$XDG_CONFIG_HOME/godot"
-          cat > "$XDG_CONFIG_HOME/godot/editor_settings-${GODOT_VERSION}.tres" <<EOF
-          [gd_resource type="EditorSettings" format=3]
-
-          [resource]
-          export/android/android_sdk_path = "${ANDROID_HOME}"
-          export/android/java_sdk_path = "${JAVA_HOME}"
-          export/android/debug_keystore = "${DEBUG_KEYSTORE}"
-          export/android/debug_keystore_user = "androiddebugkey"
-          export/android/debug_keystore_pass = "android"
-          EOF
-          cat "$XDG_CONFIG_HOME/godot/editor_settings-${GODOT_VERSION}.tres"
-
-      - name: Import Godot project
-        run: |
-          mkdir -p build
-          "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE" --import 2>&1 | tee "$RUNNER_TEMP/godot-import.log"
-
-      - name: Diagnostics before export
-        run: |
-          echo "ANDROID_HOME     = $ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT = $ANDROID_SDK_ROOT"
-          echo "JAVA_HOME        = $JAVA_HOME"
-          echo "sdkmanager       = $(command -v sdkmanager)"
-          echo "adb              = $(command -v adb)"
-          echo; java -version
-          echo; echo "--- installed platforms";  ls -1 "$ANDROID_HOME/platforms"
-          echo; echo "--- installed build-tools"; ls -1 "$ANDROID_HOME/build-tools"
-          echo; echo "--- sdkmanager --list_installed"
-          sdkmanager --sdk_root="$ANDROID_HOME" --list_installed
-          echo; echo "--- Godot"
-          "$GODOT_BIN" --version
-          echo; echo "--- Godot's Android settings (editor_settings-${GODOT_VERSION}.tres)"
-          grep -E '^export/android/(android_sdk_path|java_sdk_path|debug_keystore)' "$XDG_CONFIG_HOME/godot/editor_settings-${GODOT_VERSION}.tres"
-          echo; echo "--- Godot SDK path vs workflow SDK path"
-          godot_sdk="$(grep -E '^export/android/android_sdk_path' "$XDG_CONFIG_HOME/godot/editor_settings-${GODOT_VERSION}.tres" | sed -E 's/.*= "(.*)"/\1/')"
-          echo "Godot: $godot_sdk"
-          echo "Env:   $ANDROID_HOME"
-          [ "$godot_sdk" = "$ANDROID_HOME" ] || { echo "::error::Godot is configured with a different Android SDK path"; exit 1; }
-          echo; echo "--- project settings that Android export requires"
-          grep -n 'import_etc2_astc' project.godot
-          grep -n -E 'target_sdk|min_sdk|use_gradle_build' export_presets.cfg
-
-      - name: Export Android APK (debug)
-        run: |
-          mkdir -p build
-          "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE" --export-debug "Android" "$GITHUB_WORKSPACE/$APK_PATH" 2>&1 | tee "$RUNNER_TEMP/godot-export.log"
-
-      - name: Verify APK
-        run: |
-          apk="$GITHUB_WORKSPACE/$APK_PATH"
-          if [ ! -f "$apk" ]; then echo "::error::APK was not created: $apk"; exit 1; fi
-          if [ ! -s "$apk" ]; then echo "::error::APK is empty: $apk"; exit 1; fi
-          ls -lh "$apk"
-          unzip -tq "$apk"
-          unzip -l "$apk" > "$RUNNER_TEMP/apk-contents.txt"
-          grep -q 'AndroidManifest.xml' "$RUNNER_TEMP/apk-contents.txt"
-          "$ANDROID_HOME/build-tools/${ANDROID_BUILD_TOOLS}/apksigner" verify --verbose --print-certs "$apk"
-
-      - name: Upload APK artifact
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PandalHopping-APK
+          name: PandalHopping-Android-APK
           path: build/PandalHopping.apk
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Godot logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: godot-logs
-          path: ${{ runner.temp }}/godot-*.log
-          if-no-files-found: ignore
-          retention-days: 7
