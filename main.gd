@@ -612,39 +612,69 @@ func create_ui() -> void:
     layer.add_child(brand)
 func create_scorpio() -> void:
     var root: Node3D = Node3D.new()
-    root.name = "PLAYER_SCORPIO"
+    root.name = "PLAYER_SCORPIO_S11"
     root.position = Vector3(7, 0.0, 8)
     add_child(root)
-    var black: StandardMaterial3D = mat(Color("#111318"), 0.24, 0.55)
-    var glass: StandardMaterial3D = mat(Color("#10202b"), 0.08, 0.45)
-    mesh_box(Vector3(4.65, 1.05, 1.95), Vector3(0, 0.82, 0), black, root)
-    mesh_box(Vector3(3.0, 1.15, 1.72), Vector3(0, 1.72, -0.05), black, root)
-    mesh_box(Vector3(2.55, 0.72, 1.78), Vector3(0, 1.78, -0.14), glass, root)
-    mesh_box(Vector3(0.22, 1.15, 1.82), Vector3(-2.05, 1.45, 0), black, root)
-    mesh_box(Vector3(0.22, 1.15, 1.82), Vector3(2.05, 1.45, 0), black, root)
+
+    # Scorpio S11-inspired original mobile-friendly SUV silhouette.
+    var black: StandardMaterial3D = mat(Color("#111317"), 0.28, 0.45)
+    var trim: StandardMaterial3D = mat(Color("#25282c"), 0.38, 0.25)
+    var glass: StandardMaterial3D = mat(Color("#0b1720"), 0.08, 0.35)
+    var chrome: StandardMaterial3D = mat(Color("#8c9297"), 0.22, 0.7)
+
+    mesh_box(Vector3(4.75, 0.95, 1.98), Vector3(0, 0.86, 0), black, root)
+    mesh_box(Vector3(3.35, 1.18, 1.78), Vector3(0.10, 1.72, -0.02), black, root)
+    mesh_box(Vector3(2.85, 0.72, 1.80), Vector3(0.12, 1.80, -0.16), glass, root)
+    mesh_box(Vector3(0.18, 1.25, 1.90), Vector3(-2.08, 1.48, 0), trim, root)
+    mesh_box(Vector3(0.18, 1.25, 1.90), Vector3(2.08, 1.48, 0), trim, root)
+
+    # Front grille / bumper details.
+    mesh_box(Vector3(1.75, 0.34, 0.10), Vector3(0, 0.73, -1.04), trim, root)
+    for x: float in [-0.62, -0.31, 0.0, 0.31, 0.62]:
+        mesh_box(Vector3(0.055, 0.22, 0.08), Vector3(x, 0.75, -1.10), chrome, root)
+    mesh_box(Vector3(3.15, 0.20, 0.12), Vector3(0, 0.48, -1.03), trim, root)
+
+    # S11-style side steps, mirrors and roof rails.
+    mesh_box(Vector3(3.7, 0.12, 0.18), Vector3(0, 0.38, 1.03), trim, root)
+    mesh_box(Vector3(3.7, 0.12, 0.18), Vector3(0, 0.38, -1.03), trim, root)
+    for x: float in [-1.45, 1.45]:
+        mesh_box(Vector3(0.18, 0.16, 0.42), Vector3(x, 2.38, -0.94), trim, root)
+    mesh_box(Vector3(2.7, 0.10, 0.12), Vector3(-0.7, 2.43, -0.72), chrome, root)
+    mesh_box(Vector3(2.7, 0.10, 0.12), Vector3(-0.7, 2.43, 0.72), chrome, root)
+
     for x: float in [-1.62, 1.62]:
-        for z: float in [-0.78, 0.78]:
+        for z: float in [-0.79, 0.79]:
             var wheel: MeshInstance3D = MeshInstance3D.new()
             var wm: CylinderMesh = CylinderMesh.new()
-            wm.top_radius = 0.48
-            wm.bottom_radius = 0.48
-            wm.height = 0.28
-            wm.material = mat(Color("#08090a"), 0.96)
+            wm.top_radius = 0.49
+            wm.bottom_radius = 0.49
+            wm.height = 0.30
+            wm.material = mat(Color("#070809"), 0.97)
             wheel.mesh = wm
             wheel.rotation_degrees = Vector3(90, 0, 0)
-            wheel.position = Vector3(x, 0.45, z)
+            wheel.position = Vector3(x, 0.46, z)
             root.add_child(wheel)
-    mesh_box(Vector3(0.65, 0.25, 0.08), Vector3(-1.45, 0.78, -1.02), emissive(Color("#fff1c1"), 2.0), root)
-    mesh_box(Vector3(0.65, 0.25, 0.08), Vector3(1.45, 0.78, -1.02), emissive(Color("#fff1c1"), 2.0), root)
-    mesh_box(Vector3(2.0, 0.16, 0.10), Vector3(0, 0.72, 1.02), emissive(Color("#e33d38"), 1.4), root)
-    var label: Label = Label.new()
-    label.text = "SCORPIO"
-    label.position = Vector2(0, -30)
-    label.add_theme_font_size_override("font_size", 11)
-    label.modulate = Color("#d6dbe3")
-    var marker: Sprite3D = Sprite3D.new()
-    marker.name = "VehicleMarker"
-    root.add_child(marker)
+            var hub: MeshInstance3D = MeshInstance3D.new()
+            var hm: CylinderMesh = CylinderMesh.new()
+            hm.top_radius = 0.18
+            hm.bottom_radius = 0.18
+            hm.height = 0.32
+            hm.material = chrome
+            hub.mesh = hm
+            hub.rotation_degrees = Vector3(90, 0, 0)
+            hub.position = Vector3(x, 0.46, z)
+            root.add_child(hub)
+
+    mesh_box(Vector3(0.70, 0.27, 0.08), Vector3(-1.42, 0.86, -1.04), emissive(Color("#fff0bd"), 1.5), root)
+    mesh_box(Vector3(0.70, 0.27, 0.08), Vector3(1.42, 0.86, -1.04), emissive(Color("#fff0bd"), 1.5), root)
+    mesh_box(Vector3(2.15, 0.16, 0.10), Vector3(0, 0.76, 1.04), emissive(Color("#d93636"), 1.2), root)
+
+    var plate: Label = Label.new()
+    plate.text = "ANI • S11"
+    plate.position = Vector2(0, -24)
+    plate.add_theme_font_size_override("font_size", 10)
+    plate.modulate = Color("#d6dbe3")
+    root.add_child(plate)
 
 func create_agartala_landmarks() -> void:
     create_landmark("UJJAYANTA PALACE", Vector3(-72, 0, -55), Vector3(30, 12, 22), Color("#e8e4d6"))
