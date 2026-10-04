@@ -52,9 +52,9 @@ jobs:
           fi
           yes | "$SDKMANAGER" --sdk_root="$SDK" --licenses > /dev/null || true
           "$SDKMANAGER" --sdk_root="$SDK" --version
-          "$SDKMANAGER" --sdk_root="$SDK" "platforms;android-35" "build-tools;35.0.1" "platform-tools"
+          "$SDKMANAGER" --sdk_root="$SDK" "platforms;android-34" "build-tools;35.0.1" "platform-tools"
           test -x "$SDK/build-tools/35.0.1/aapt2"
-          test -d "$SDK/platforms/android-35"
+          test -d "$SDK/platforms/android-34"
           adb version
 
       - name: Set up Godot Engine & Export Templates (v4.3.stable)
