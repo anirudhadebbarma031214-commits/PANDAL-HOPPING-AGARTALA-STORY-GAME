@@ -114,6 +114,11 @@ jobs:
           adb start-server
           adb devices
 
+      - name: Prepare APK output directory
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/build"
+          test -d "$GITHUB_WORKSPACE/build"
+
       - name: Export Android APK
         run: |
           godot --headless --path "$GITHUB_WORKSPACE" --export-debug "Android" "$GITHUB_WORKSPACE/build/PandalHopping.apk"
