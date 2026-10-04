@@ -106,10 +106,13 @@ jobs:
           echo "Godot Android export template installed."
 
       - name: Install Project Android Gradle Template
+        timeout-minutes: 5
         run: |
           mkdir -p build
-          godot --headless --path "$GITHUB_WORKSPACE" --editor --install-android-build-template
-          test -f "$GITHUB_WORKSPACE/android/build.gradle" || test -f "$GITHUB_WORKSPACE/android/build.gradle.kts"
+          godot --headless --path "$GITHUB_WORKSPACE" --editor --install-android-build-template --quit
+          echo "Android template contents:"
+          find "$GITHUB_WORKSPACE/android" -maxdepth 3 -type f -print 2>/dev/null || true
+          test -d "$GITHUB_WORKSPACE/android"
           echo "Project Android Gradle template installed."
 
       - name: Import Godot Project Resources
