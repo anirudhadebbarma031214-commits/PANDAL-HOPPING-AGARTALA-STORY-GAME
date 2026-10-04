@@ -25,6 +25,7 @@ func _ready() -> void:
     await get_tree().process_frame
     set_loading_progress(0.12, "Loading Agartala...")
     create_world()
+    create_living_city_systems()
     await get_tree().process_frame
     set_loading_progress(0.42, "Building the city...")
     create_player()
@@ -178,6 +179,167 @@ func mesh_cylinder(radius: float, height: float, position: Vector3, material: Ma
     mi.position = position
     parent.add_child(mi)
     return mi
+
+func create_living_city_systems() -> void:
+    create_traffic_system()
+    create_pedestrian_system()
+    create_mission_ui()
+    create_phone_ui()
+    create_weather_system()
+    create_map_ui()
+
+func create_traffic_system() -> void:
+    var traffic: Node3D = Node3D.new()
+    traffic.name = "TRAFFIC_SYSTEM"
+    add_child(traffic)
+    for i: int in range(12):
+        var p: Vector3 = Vector3(-78.0 + float(i % 6) * 31.0, 0.65, -62.0 + float(i / 6) * 124.0)
+        create_car(p, i % 5 == 0)
+
+func create_pedestrian_system() -> void:
+    var pedestrians: Node3D = Node3D.new()
+    pedestrians.name = "PEDESTRIAN_SYSTEM"
+    add_child(pedestrians)
+    for i: int in range(18):
+        var p: Vector3 = Vector3(-70.0 + float((i * 17) % 140), 0.0, -75.0 + float((i * 29) % 150))
+        var person: Node3D = Node3D.new()
+        person.name = "NPC_%02d" % i
+        person.position = p
+        pedestrians.add_child(person)
+        mesh_cylinder(0.22, 1.05, Vector3(0, 0.95, 0), mat(Color("#34465a"), 0.78), person)
+        mesh_cylinder(0.14, 0.32, Vector3(0, 1.65, 0), mat(Color("#a87456"), 0.75), person)
+        var head: MeshInstance3D = MeshInstance3D.new()
+        var sphere: SphereMesh = SphereMesh.new()
+        sphere.radius = 0.15
+        sphere.height = 0.30
+        sphere.material = mat(Color("#a87456"), 0.75)
+        head.mesh = sphere
+        head.position = Vector3(0, 1.9, 0)
+        person.add_child(head)
+
+func create_mission_ui() -> void:
+    var layer: CanvasLayer = CanvasLayer.new()
+    layer.name = "MissionUI"
+    layer.layer = 10
+    add_child(layer)
+    var panel: ColorRect = ColorRect.new()
+    panel.position = Vector2(28, 205)
+    panel.size = Vector2(360, 92)
+    panel.color = Color(0.02, 0.025, 0.04, 0.86)
+    layer.add_child(panel)
+    var title: Label = Label.new()
+    title.text = "CURRENT MISSION"
+    title.position = Vector2(18, 12)
+    title.add_theme_font_size_override("font_size", 12)
+    title.modulate = Color("#9eacff")
+    panel.add_child(title)
+    var mission: Label = Label.new()
+    mission.text = "THE CALL FROM HOME\nGo home to Badharghat"
+    mission.position = Vector2(18, 34)
+    mission.add_theme_font_size_override("font_size", 16)
+    mission.modulate = Color("#f0f2f5")
+    panel.add_child(mission)
+
+func create_phone_ui() -> void:
+    var layer: CanvasLayer = CanvasLayer.new()
+    layer.name = "PhoneUI"
+    layer.layer = 12
+    add_child(layer)
+    var phone: Button = Button.new()
+    phone.name = "PhoneButton"
+    phone.text = "PHONE"
+    phone.position = Vector2(0, 0)
+    phone.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+    phone.position = Vector2(-150, 28)
+    phone.size = Vector2(120, 52)
+    phone.add_theme_font_size_override("font_size", 14)
+    layer.add_child(phone)
+    phone.pressed.connect(_toggle_phone)
+    var panel: ColorRect = ColorRect.new()
+    panel.name = "PhonePanel"
+    panel.position = Vector2(0, 0)
+    panel.set_anchors_preset(Control.PRESET_CENTER)
+    panel.position = Vector2(-180, -260)
+    panel.size = Vector2(360, 520)
+    panel.color = Color("#0b1018")
+    panel.visible = false
+    layer.add_child(panel)
+    var label: Label = Label.new()
+    label.text = "ANI PHONE\n\nMAP     CALLS     MESSAGES\n\nANI PAY     CAMERA\n\nTraffic & legal notices"
+    label.position = Vector2(28, 30)
+    label.add_theme_font_size_override("font_size", 20)
+    label.modulate = Color("#e8edf4")
+    panel.add_child(label)
+
+func _toggle_phone() -> void:
+    var layer: CanvasLayer = get_node_or_null("PhoneUI") as CanvasLayer
+    if not layer:
+        return
+    var panel: ColorRect = layer.get_node_or_null("PhonePanel") as ColorRect
+    if panel:
+        panel.visible = not panel.visible
+
+func create_weather_system() -> void:
+    var weather: GPUParticles3D = GPUParticles3D.new()
+    weather.name = "RAIN_SYSTEM"
+    weather.amount = 900
+    weather.lifetime = 1.5
+    weather.position = Vector3(0, 14, 0)
+    weather.visibility_aabb = AABB(Vector3(-90, -14, -90), Vector3(180, 30, 180))
+    var process: ParticleProcessMaterial = ParticleProcessMaterial.new()
+    process.direction = Vector3(0, -1, 0)
+    process.initial_velocity_min = 14.0
+    process.initial_velocity_max = 22.0
+    process.gravity = Vector3(0, -5, 0)
+    process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+    process.emission_box_extents = Vector3(85, 1, 85)
+    weather.process_material = process
+    var mesh: BoxMesh = BoxMesh.new()
+    mesh.size = Vector3(0.025, 0.5, 0.025)
+    mesh.material = mat(Color("#9eb6d0"), 0.4)
+    weather.draw_pass_1 = mesh
+    weather.emitting = false
+    add_child(weather)
+    var button: Button = Button.new()
+    button.text = "RAIN"
+    button.position = Vector2(28, 320)
+    button.size = Vector2(110, 46)
+    button.add_theme_font_size_override("font_size", 13)
+    var layer: CanvasLayer = CanvasLayer.new()
+    layer.layer = 11
+    add_child(layer)
+    layer.add_child(button)
+    button.pressed.connect(func() -> void:
+        weather.emitting = not weather.emitting
+    )
+
+func create_map_ui() -> void:
+    var layer: CanvasLayer = CanvasLayer.new()
+    layer.name = "MapUI"
+    layer.layer = 9
+    add_child(layer)
+    var map_button: Button = Button.new()
+    map_button.text = "MAP"
+    map_button.position = Vector2(28, 380)
+    map_button.size = Vector2(110, 46)
+    map_button.add_theme_font_size_override("font_size", 13)
+    layer.add_child(map_button)
+    var map_panel: ColorRect = ColorRect.new()
+    map_panel.name = "MapPanel"
+    map_panel.position = Vector2(28, 435)
+    map_panel.size = Vector2(390, 230)
+    map_panel.color = Color(0.025, 0.04, 0.06, 0.94)
+    map_panel.visible = false
+    layer.add_child(map_panel)
+    var map_text: Label = Label.new()
+    map_text.text = "AGARTALA WORLD MAP\n\n✈ MBB AIRPORT     🚆 RAILWAY STATION\n🏠 BADHARGHAT     🏬 MALL\n🏛 UJJAYANTA PALACE\n🛕 TEMPLE        👮 POLICE HQ\n\nUDAIPUR → 230m SOUTH ROAD"
+    map_text.position = Vector2(18, 18)
+    map_text.add_theme_font_size_override("font_size", 15)
+    map_text.modulate = Color("#e5e9ef")
+    map_panel.add_child(map_text)
+    map_button.pressed.connect(func() -> void:
+        map_panel.visible = not map_panel.visible
+    )
 
 func create_world() -> void:
     var we: WorldEnvironment = WorldEnvironment.new()
