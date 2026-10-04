@@ -192,7 +192,7 @@ func create_traffic_system() -> void:
     var traffic: Node3D = Node3D.new()
     traffic.name = "TRAFFIC_SYSTEM"
     add_child(traffic)
-    for i: int in range(12):
+    for i: int in range(8):
         var p: Vector3 = Vector3(-78.0 + float(i % 6) * 31.0, 0.65, -62.0 + float(i / 6) * 124.0)
         create_car(p, i % 5 == 0)
 
@@ -200,7 +200,7 @@ func create_pedestrian_system() -> void:
     var pedestrians: Node3D = Node3D.new()
     pedestrians.name = "PEDESTRIAN_SYSTEM"
     add_child(pedestrians)
-    for i: int in range(18):
+    for i: int in range(10):
         var p: Vector3 = Vector3(-70.0 + float((i * 17) % 140), 0.0, -75.0 + float((i * 29) % 150))
         var person: Node3D = Node3D.new()
         person.name = "NPC_%02d" % i
@@ -373,7 +373,7 @@ func create_world() -> void:
     sun.light_color = Color("#fff0cf")
     sun.light_energy = 1.8
     sun.shadow_enabled = true
-    sun.directional_shadow_max_distance = 120.0
+    sun.directional_shadow_max_distance = 70.0
     sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
     add_child(sun)
 
@@ -398,8 +398,8 @@ func create_world() -> void:
     create_detailed_building("AGARTALA RAILWAY STATION", Vector3(34, 0, 48), Vector3(27, 9, 15), Color("#817d72"))
     create_detailed_building("MAHARAJA BIR BIKRAM AIRPORT", Vector3(-35, 0, 48), Vector3(34, 9, 22), Color("#70818a"))
 
-    create_shop_row(Vector3(-52, 0, -10), 7)
-    create_shop_row(Vector3(52, 0, 10), 7)
+    create_shop_row(Vector3(-52, 0, -10), 4)
+    create_shop_row(Vector3(52, 0, 10), 4)
 
     for p: Vector3 in [Vector3(-9,0,20), Vector3(15,0,-19), Vector3(-48,0,-5), Vector3(48,0,5), Vector3(-8,0,-48), Vector3(10,0,48)]:
         create_realistic_tree(p)
@@ -459,15 +459,16 @@ func create_realistic_tree(pos: Vector3) -> void:
 
 func create_street_lights() -> void:
     for x: float in [-8.8, 8.8]:
-        for z: int in range(-75, 76, 20):
+        for z: int in range(-75, 76, 38):
             mesh_cylinder(0.09, 6.0, Vector3(x,3.0,z), mat(Color("#25292c"), 0.35, 0.65))
             mesh_box(Vector3(1.2,0.16,0.16), Vector3(x + (1.0 if x < 0 else -1.0), 5.8, z), mat(Color("#25292c"), 0.35, 0.65))
-            var lamp: OmniLight3D = OmniLight3D.new()
-            lamp.position = Vector3(x + (1.5 if x < 0 else -1.5), 5.6, z)
-            lamp.light_color = Color("#ffd9a0")
-            lamp.light_energy = 3.2
-            lamp.omni_range = 10.0
-            add_child(lamp)
+            if z == -75 or z == 1 or z == 77:
+                var lamp: OmniLight3D = OmniLight3D.new()
+                lamp.position = Vector3(x + (1.5 if x < 0 else -1.5), 5.6, z)
+                lamp.light_color = Color("#ffd9a0")
+                lamp.light_energy = 1.6
+                lamp.omni_range = 7.0
+                add_child(lamp)
 
 func create_cars() -> void:
     var positions: Array[Vector3] = [
@@ -693,11 +694,11 @@ func create_landmark_at(parent: Node3D, n: String, pos: Vector3, size: Vector3, 
     mesh_box(size, Vector3(0, size.y * 0.5, 0), mat(color, 0.82), root)
 
 func create_world_assets() -> void:
-    for i: int in range(34):
+    for i: int in range(12):
         var x: float = -130.0 + float((i * 37) % 260)
         var z: float = -110.0 + float((i * 61) % 220)
         create_realistic_tree(Vector3(x, 0, z))
-    for i: int in range(18):
+    for i: int in range(8):
         var p: Vector3 = Vector3(-120 + (i % 9) * 30, 0.6, -100 + (i / 9) * 190)
         create_car(p, i == 2)
 
