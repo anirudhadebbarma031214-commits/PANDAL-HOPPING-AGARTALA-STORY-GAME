@@ -49,19 +49,19 @@ func create_loading_screen() -> void:
 
     loading_root = ColorRect.new()
     loading_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    loading_root.color = Color("#05070b")
+    loading_root.color = Color("#020307")
     loading_layer.add_child(loading_root)
 
     var image_panel: ColorRect = ColorRect.new()
     image_panel.position = Vector2(0, 0)
     image_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-    image_panel.color = Color(0.03, 0.055, 0.10, 1.0)
+    image_panel.color = Color(0.015, 0.02, 0.035, 1.0)
     loading_root.add_child(image_panel)
 
     var glow: ColorRect = ColorRect.new()
     glow.position = Vector2(0, 0)
     glow.set_anchors_preset(Control.PRESET_FULL_RECT)
-    glow.color = Color(0.08, 0.13, 0.22, 0.42)
+    glow.color = Color(0.035, 0.055, 0.11, 0.28)
     loading_root.add_child(glow)
 
     var brand: Label = Label.new()
@@ -282,7 +282,7 @@ func _toggle_phone() -> void:
 func create_weather_system() -> void:
     var weather: GPUParticles3D = GPUParticles3D.new()
     weather.name = "RAIN_SYSTEM"
-    weather.amount = 900
+    weather.amount = 260
     weather.lifetime = 1.5
     weather.position = Vector3(0, 14, 0)
     weather.visibility_aabb = AABB(Vector3(-90, -14, -90), Vector3(180, 30, 180))
@@ -358,7 +358,7 @@ func create_world() -> void:
     env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
     env.ambient_light_energy = 0.8
     env.tonemap_mode = Environment.TONE_MAPPER_ACES
-    env.glow_enabled = true
+    env.glow_enabled = false
     env.glow_intensity = 0.7
     env.glow_bloom = 0.08
     env.fog_enabled = true
