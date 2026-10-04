@@ -100,7 +100,9 @@ jobs:
             rm -rf templates
           fi
           rm -f templates.tpz
-          test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_debug.apk"
+          echo "Installed Godot Android templates:"
+          find "$HOME/.local/share/godot/export_templates/4.3.stable" -maxdepth 2 -type f -print
+          test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_source.zip" || test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_debug.apk"
           echo "Godot Android export template installed."
 
       - name: Import Godot Project Resources
