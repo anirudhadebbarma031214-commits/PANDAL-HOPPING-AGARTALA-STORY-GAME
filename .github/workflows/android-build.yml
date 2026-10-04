@@ -89,6 +89,20 @@ jobs:
           export/android/force_system_user = false
           EOF
 
+      - name: Install Godot Android Build Template
+        run: |
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable"
+          cd "$HOME/.local/share/godot/export_templates/4.3.stable"
+          curl -sSL -o templates.tpz https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
+          unzip -q -o templates.tpz
+          if [ -d templates ]; then
+            cp -a templates/. .
+            rm -rf templates
+          fi
+          rm -f templates.tpz
+          test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_debug.apk"
+          echo "Godot Android export template installed."
+
       - name: Import Godot Project Resources
         run: |
           mkdir -p build
