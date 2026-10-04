@@ -15,10 +15,133 @@ var look_touch: int = -1
 var move_input: Vector2 = Vector2.ZERO
 var look_input: Vector2 = Vector2.ZERO
 
+var loading_layer: CanvasLayer
+var loading_root: ColorRect
+var loading_bar: ColorRect
+var loading_status: Label
+
 func _ready() -> void:
+    create_loading_screen()
+    await get_tree().process_frame
+    set_loading_progress(0.12, "Loading Agartala...")
     create_world()
+    await get_tree().process_frame
+    set_loading_progress(0.42, "Building the city...")
     create_player()
+    await get_tree().process_frame
+    set_loading_progress(0.68, "Preparing player controls...")
     create_ui()
+    await get_tree().process_frame
+    set_loading_progress(0.88, "Finalizing the world...")
+    await get_tree().create_timer(0.65).timeout
+    set_loading_progress(1.0, "Welcome to Agartala")
+    await get_tree().create_timer(0.55).timeout
+    if is_instance_valid(loading_root):
+        loading_root.queue_free()
+    if is_instance_valid(loading_layer):
+        loading_layer.queue_free()
+
+func create_loading_screen() -> void:
+    loading_layer = CanvasLayer.new()
+    loading_layer.layer = 100
+    add_child(loading_layer)
+
+    loading_root = ColorRect.new()
+    loading_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    loading_root.color = Color("#05070b")
+    loading_layer.add_child(loading_root)
+
+    var image_panel: ColorRect = ColorRect.new()
+    image_panel.position = Vector2(0, 0)
+    image_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+    image_panel.color = Color(0.03, 0.055, 0.10, 1.0)
+    loading_root.add_child(image_panel)
+
+    var glow: ColorRect = ColorRect.new()
+    glow.position = Vector2(0, 0)
+    glow.set_anchors_preset(Control.PRESET_FULL_RECT)
+    glow.color = Color(0.08, 0.13, 0.22, 0.42)
+    loading_root.add_child(glow)
+
+    var brand: Label = Label.new()
+    brand.text = "A GAME BY ANI STUDIO"
+    brand.position = Vector2(42, 42)
+    brand.add_theme_font_size_override("font_size", 16)
+    brand.modulate = Color("#aebcff")
+    loading_root.add_child(brand)
+
+    var title: Label = Label.new()
+    title.text = "PANDAL HOPPING"
+    title.position = Vector2(42, 150)
+    title.add_theme_font_size_override("font_size", 42)
+    title.modulate = Color("#f5f3ec")
+    loading_root.add_child(title)
+
+    var subtitle: Label = Label.new()
+    subtitle.text = "AN AGARTALA STORY"
+    subtitle.position = Vector2(45, 204)
+    subtitle.add_theme_font_size_override("font_size", 22)
+    subtitle.modulate = Color("#d6dce4")
+    loading_root.add_child(subtitle)
+
+    var location: Label = Label.new()
+    location.text = "AGARTALA • TRIPURA"
+    location.position = Vector2(45, 246)
+    location.add_theme_font_size_override("font_size", 13)
+    location.modulate = Color("#8795a5")
+    loading_root.add_child(location)
+
+    var tip: Label = Label.new()
+    tip.text = "THE CITY REMEMBERS YOU."
+    tip.position = Vector2(45, 0)
+    tip.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+    tip.position.y = 315
+    tip.add_theme_font_size_override("font_size", 18)
+    tip.modulate = Color("#e5e7eb")
+    loading_root.add_child(tip)
+
+    loading_status = Label.new()
+    loading_status.text = "Loading..."
+    loading_status.position = Vector2(45, 0)
+    loading_status.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+    loading_status.position = Vector2(45, -145)
+    loading_status.add_theme_font_size_override("font_size", 15)
+    loading_status.modulate = Color("#aeb7c3")
+    loading_root.add_child(loading_status)
+
+    var track: ColorRect = ColorRect.new()
+    track.position = Vector2(45, 0)
+    track.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+    track.position = Vector2(45, -105)
+    track.size = Vector2(520, 8)
+    track.color = Color("#252c36")
+    loading_root.add_child(track)
+
+    loading_bar = ColorRect.new()
+    loading_bar.position = Vector2(45, 0)
+    loading_bar.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+    loading_bar.position = Vector2(45, -105)
+    loading_bar.size = Vector2(0, 8)
+    loading_bar.color = Color("#aebcff")
+    loading_root.add_child(loading_bar)
+
+    var hint: Label = Label.new()
+    hint.text = "Loading the world • Please wait"
+    hint.position = Vector2(45, 0)
+    hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+    hint.position = Vector2(45, -75)
+    hint.add_theme_font_size_override("font_size", 12)
+    hint.modulate = Color("#697586")
+    loading_root.add_child(hint)
+
+func set_loading_progress(value: float, status: String) -> void:
+    if not is_instance_valid(loading_bar):
+        return
+    var clamped: float = clamp(value, 0.0, 1.0)
+    loading_bar.size.x = 520.0 * clamped
+    if is_instance_valid(loading_status):
+        loading_status.text = status + "  " + str(int(clamped * 100.0)) + "%"
+
 
 func mat(color: Color, roughness: float = 0.65, metallic: float = 0.0) -> StandardMaterial3D:
     var m: StandardMaterial3D = StandardMaterial3D.new()
