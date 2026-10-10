@@ -55,7 +55,7 @@ func start_opening_cutscene() -> void:
         speaker_label.text = str(beat["speaker"])
         bengali_label.text = str(beat["bn"])
         subtitle_label.text = str(beat["en"])
-        await get_tree().create_timer(float(beat["seconds"]).clamp(1.0, 8.0)).timeout
+        await get_tree().create_timer(clampf(float(beat["seconds"]), 1.0, 8.0)).timeout
     card.visible = false
     active = false
     beat_finished.emit("opening_call_from_home")
