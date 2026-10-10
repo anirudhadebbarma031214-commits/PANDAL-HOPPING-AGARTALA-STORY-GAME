@@ -48,6 +48,7 @@ func _ready() -> void:
 
 func create_loading_screen() -> void:
     loading_layer = CanvasLayer.new()
+    loading_layer.name = "BootLoadingLayer"
     loading_layer.layer = 100
     add_child(loading_layer)
 
