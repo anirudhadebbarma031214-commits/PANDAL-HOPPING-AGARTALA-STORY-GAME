@@ -10,7 +10,10 @@ A Godot 4 mobile-focused, third-person story-game prototype inspired by Agartala
 - Third-person character and follow camera
 - Keyboard and touchscreen movement/look input
 - Loading screen and mobile HUD
-- Starter game-state, phone UI, pause menu, audio hooks and Bengali/English story-dialogue scripts
+- Game-state and audio director registered as autoloads
+- Integrated pause menu and replayable Bengali dialogue with English subtitles
+- Smartphone UI script and reusable world-builder
+- Procedural Bangalore office and Badarghat home interior scenes under `scenes/`
 - Badarghat home, mall, railway station, airport and Puja-related story direction planned for continued development
 
 ## Open on a computer
@@ -29,7 +32,8 @@ The intended opening starts in a Bangalore office at night. A call from Ma and B
 ## Important limitations
 - Procedural meshes are prototype geometry, not AAA assets.
 - Audio hooks are placeholders; no licensed music or recorded dhak/traffic sound is bundled.
-- Story systems added as scripts still need scene-level integration and testing in Godot.
+- The Bangalore office and Badarghat home scenes are separate prototype scenes and are not yet connected into a full cinematic transition sequence.
+- The smartphone UI script is available but still needs to be wired into the main HUD.
 - No claim is made that the current project is error-free or that an Android APK works.
 
 ## Credits
