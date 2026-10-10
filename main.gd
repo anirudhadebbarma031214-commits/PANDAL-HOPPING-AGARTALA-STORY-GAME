@@ -119,7 +119,7 @@ func create_loading_screen() -> void:
 func set_loading_progress(value: float, status: String) -> void:
     if not is_instance_valid(loading_bar):
         return
-    var v := clamp(value, 0.0, 1.0)
+    var v: float = clampf(value, 0.0, 1.0)
     loading_bar.size.x = 520.0 * v
     if is_instance_valid(loading_status):
         loading_status.text = status + "  " + str(int(v * 100.0)) + "%"
@@ -241,11 +241,11 @@ func create_building(n: String, pos: Vector3, size: Vector3, color: Color) -> vo
     box_mesh(size, Vector3(0, size.y * 0.5, 0), mat(color, 0.76), root)
     box_mesh(Vector3(size.x + 0.4, 0.3, size.z + 0.4), Vector3(0, size.y + 0.15, 0), mat(color.darkened(0.18), 0.8), root)
 
-    var floors := max(1, int(size.y / 2.8))
-    var windows := max(2, int(size.x / 3.5))
+    var floors: int = maxi(1, int(size.y / 2.8))
+    var windows: int = maxi(2, int(size.x / 3.5))
     for f in range(floors):
         for w in range(windows):
-            var x := -size.x * 0.5 + 1.5 + float(w) * ((size.x - 3.0) / max(1, windows - 1))
+            var x: float = -size.x * 0.5 + 1.5 + float(w) * ((size.x - 3.0) / float(maxi(1, windows - 1)))
             var y := 1.25 + float(f) * 2.45
             box_mesh(Vector3(1.25, 1.05, 0.08), Vector3(x, y, -size.z * 0.505), mat(Color("#173044"), 0.2, 0.15), root)
 
