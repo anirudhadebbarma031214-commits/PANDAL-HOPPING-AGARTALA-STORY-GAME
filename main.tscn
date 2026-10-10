@@ -1,6 +1,50 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=8 format=3]
 
-[ext_resource path="res://main.gd" type="Script" id="1"]
+[ext_resource type="Script" path="res://main.gd" id="1"]
+
+[sub_resource type="StandardMaterial3D" id="GroundMaterial"]
+albedo_color = Color(0.18, 0.27, 0.19, 1)
+
+[sub_resource type="StandardMaterial3D" id="RoadMaterial"]
+albedo_color = Color(0.11, 0.12, 0.13, 1)
+
+[sub_resource type="StandardMaterial3D" id="BuildingMaterial"]
+albedo_color = Color(0.55, 0.36, 0.25, 1)
+
+[sub_resource type="PlaneMesh" id="GroundMesh"]
+size = Vector2(180, 180)
+material = SubResource("GroundMaterial")
+
+[sub_resource type="BoxMesh" id="RoadMesh"]
+size = Vector3(18, 0.12, 120)
+material = SubResource("RoadMaterial")
+
+[sub_resource type="BoxMesh" id="BuildingMesh"]
+size = Vector3(12, 8, 10)
+material = SubResource("BuildingMaterial")
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1")
+
+[node name="FallbackCamera" type="Camera3D" parent="."]
+position = Vector3(0, 7, 18)
+rotation_degrees = Vector3(-18, 0, 0)
+current = true
+fov = 68.0
+
+[node name="FallbackGround" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.25, 0)
+mesh = SubResource("GroundMesh")
+
+[node name="FallbackRoad" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.02, 0)
+mesh = SubResource("RoadMesh")
+
+[node name="FallbackHome" type="MeshInstance3D" parent="."]
+position = Vector3(-17, 4, -12)
+mesh = SubResource("BuildingMesh")
+
+[node name="FallbackMall" type="MeshInstance3D" parent="."]
+position = Vector3(19, 5, -18)
+scale = Vector3(1.8, 1.25, 1.5)
+mesh = SubResource("BuildingMesh")
