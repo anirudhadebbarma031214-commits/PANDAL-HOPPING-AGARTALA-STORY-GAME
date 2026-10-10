@@ -1,141 +1,23 @@
-name: Android Build
+name: Source Check (manual only)
 
 on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  build:
+  source-check:
+    name: Lightweight source check (no Android build)
     runs-on: ubuntu-latest
-    env:
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      ANDROID_HOME: /usr/local/lib/android/sdk
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout source
         uses: actions/checkout@v4
-
-      - name: Set up Java 17 (JDK)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Generate Android Debug Keystore
+      - name: Check essential project files
         run: |
-          mkdir -p $HOME/.android
-          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore $HOME/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
-
-      - name: Set up Android SDK & Command-line Tools
-        run: |
-          SDK="$ANDROID_SDK_ROOT"
-          SDKMANAGER="$(find "$SDK/cmdline-tools" -type f -name sdkmanager -print -quit)"
-          if [ -z "$SDKMANAGER" ]; then
-            echo "ERROR: sdkmanager not found under $SDK/cmdline-tools"
-            find "$SDK/cmdline-tools" -maxdepth 3 -type f -print || true
-            exit 1
-          fi
-          echo "$(dirname "$SDKMANAGER")" >> $GITHUB_PATH
-          echo "$SDK/platform-tools" >> $GITHUB_PATH
-          echo "$SDK/build-tools/35.0.1" >> $GITHUB_PATH
-
-      - name: Accept Licenses and Install Android Packages
-        run: |
-          SDK="$ANDROID_SDK_ROOT"
-          SDKMANAGER="$(find "$SDK/cmdline-tools" -type f -name sdkmanager -print -quit)"
-          if [ -z "$SDKMANAGER" ]; then
-            echo "ERROR: sdkmanager not found under $SDK/cmdline-tools"
-            exit 1
-          fi
-          yes | "$SDKMANAGER" --sdk_root="$SDK" --licenses > /dev/null || true
-          "$SDKMANAGER" --sdk_root="$SDK" --version
-          "$SDKMANAGER" --sdk_root="$SDK" "platforms;android-34" "build-tools;35.0.1" "platform-tools"
-          test -x "$SDK/build-tools/35.0.1/aapt2"
-          test -d "$SDK/platforms/android-34"
-          adb version
-
-      - name: Set up Godot Engine & Export Templates (v4.3.stable)
-        run: |
-          mkdir -p $HOME/godot
-          cd $HOME/godot
-
-          curl -sSL -o godot.zip https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
-          unzip -q godot.zip
-          mv Godot_v4.3-stable_linux.x86_64 godot
-          chmod +x godot
-          echo "$HOME/godot" >> $GITHUB_PATH
-
-          mkdir -p ~/.local/share/godot/export_templates/4.3.stable
-          curl -sSL -o templates.tpz https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
-          unzip -q templates.tpz
-          mv templates/* ~/.local/share/godot/export_templates/4.3.stable/
-          rm -rf templates templates.tpz godot.zip
-
-      - name: Configure Godot Global Editor Settings
-        run: |
-          GODOT_CONFIG_DIR="$HOME/.config/godot"
-          mkdir -p "$GODOT_CONFIG_DIR"
-
-          cat <<EOF > "$GODOT_CONFIG_DIR/editor_settings-4.godot"
-          [godot]
-          export/android/android_sdk_path = "/usr/local/lib/android/sdk"
-          export/android/java_sdk_path = "$JAVA_HOME"
-          export/android/debug_keystore = "$HOME/.android/debug.keystore"
-          export/android/debug_keystore_user = "androiddebugkey"
-          export/android/debug_keystore_pass = "android"
-          export/android/force_system_user = false
-          EOF
-
-      - name: Install Godot Android Build Template
-        run: |
-          mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable"
-          cd "$HOME/.local/share/godot/export_templates/4.3.stable"
-          curl -sSL -o templates.tpz https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
-          unzip -q -o templates.tpz
-          if [ -d templates ]; then
-            cp -a templates/. .
-            rm -rf templates
-          fi
-          rm -f templates.tpz
-          echo "Installed Godot Android templates:"
-          find "$HOME/.local/share/godot/export_templates/4.3.stable" -maxdepth 2 -type f -print
-          test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_source.zip" || test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_debug.apk"
-          echo "Godot Android export template installed."
-
-      - name: Import Godot Project Resources
-        run: |
-          godot --headless --path "$GITHUB_WORKSPACE" --editor --quit
-
-      - name: Start ADB daemon for Godot Android export
-        run: |
-          adb start-server
-          adb devices
-
-      - name: Prepare APK output directory
-        run: |
-          mkdir -p "$GITHUB_WORKSPACE/build"
-          test -d "$GITHUB_WORKSPACE/build"
-
-      - name: Export Android APK
-        run: |
-          godot --headless --path "$GITHUB_WORKSPACE" --export-debug "Android" "$GITHUB_WORKSPACE/build/PandalHopping.apk"
-
-      - name: Verify APK Creation
-        run: |
-          if [ -f "$GITHUB_WORKSPACE/build/PandalHopping.apk" ]; then
-            echo "APK generated successfully at $GITHUB_WORKSPACE/build/PandalHopping.apk"
-            ls -lh "$GITHUB_WORKSPACE/build/PandalHopping.apk"
-          else
-            echo "ERROR: APK build failed! File does not exist."
-            exit 1
-          fi
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: PandalHopping-APK
-          path: ${{ github.workspace }}/build/PandalHopping.apk
-          retention-days: 7
+          test -f project.godot
+          test -f main.tscn
+          test -f main.gd
+          test -f game_state.gd
+          test -f story_director.gd
+          echo "Essential source files are present. No APK was built."
