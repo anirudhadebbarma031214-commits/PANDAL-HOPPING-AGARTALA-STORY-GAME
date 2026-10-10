@@ -39,6 +39,7 @@ func _ready() -> void:
     set_loading_progress(0.80, "Adding city life...")
     create_city_life()
     create_ui()
+    setup_story_tools()
     await get_tree().process_frame
     set_loading_progress(1.0, "Welcome to Agartala")
     await get_tree().create_timer(0.35).timeout
@@ -484,3 +485,26 @@ func create_ui() -> void:
     phone_text.modulate = Color("#e8edf4")
     phone_panel.add_child(phone_text)
     phone.pressed.connect(func(): phone_panel.visible = not phone_panel.visible)
+
+
+func setup_story_tools() -> void:
+    var pause_layer := preload("res://pause_menu.gd").new()
+    add_child(pause_layer)
+    var story_layer := preload("res://story_director.gd").new()
+    story_layer.name = "StoryDirector"
+    add_child(story_layer)
+
+    var intro_button := Button.new()
+    intro_button.text = "REPLAY INTRO"
+    intro_button.position = Vector2(28, 176)
+    intro_button.size = Vector2(148, 42)
+    intro_button.add_theme_font_size_override("font_size", 13)
+    # The player can replay the Bengali/English opening dialogue at any time.
+    intro_button.pressed.connect(func(): story_layer.start_opening_cutscene())
+    var hud := get_node_or_null("HUDStoryTools")
+    if hud == null:
+        hud = CanvasLayer.new()
+        hud.name = "HUDStoryTools"
+        hud.layer = 15
+        add_child(hud)
+    hud.add_child(intro_button)
