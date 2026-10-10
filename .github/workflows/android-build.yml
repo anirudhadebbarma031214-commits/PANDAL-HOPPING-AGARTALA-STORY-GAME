@@ -1,4 +1,4 @@
-name: Source Check (manual only)
+name: Godot Source Check (manual only)
 
 on:
   workflow_dispatch:
@@ -8,11 +8,19 @@ permissions:
 
 jobs:
   source-check:
-    name: Lightweight source check (no Android build)
+    name: Parse and launch-check Godot project
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+
+      - name: Install Godot 4.3
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip -O /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          chmod +x /tmp/godot/Godot_v4.3-stable_linux.x86_64
+          echo "/tmp/godot" >> "$GITHUB_PATH"
+
       - name: Check essential project files
         run: |
           test -f project.godot
@@ -20,4 +28,26 @@ jobs:
           test -f main.gd
           test -f game_state.gd
           test -f story_director.gd
-          echo "Essential source files are present. No APK was built."
+
+      - name: Import project and report script errors
+        shell: bash
+        run: |
+          set -o pipefail
+          Godot_v4.3-stable_linux.x86_64 --headless --editor --path . --quit --verbose 2>&1 | tee /tmp/godot-editor.log
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Parse error" /tmp/godot-editor.log; then
+            echo "Godot reported a script or parse error."
+            exit 1
+          fi
+
+      - name: Run main scene briefly and report startup errors
+        shell: bash
+        run: |
+          set -o pipefail
+          Godot_v4.3-stable_linux.x86_64 --headless --path . --quit-after 10 --verbose 2>&1 | tee /tmp/godot-run.log
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Parse error" /tmp/godot-run.log; then
+            echo "Godot reported a startup script error."
+            exit 1
+          fi
+
+      - name: Confirm no APK build was run
+        run: echo "Source validation only. No Android APK was built."
