@@ -9,6 +9,11 @@ config/features=PackedStringArray("4.3", "Mobile")
 config/icon="res://logo.png"
 run/disable_stdout=false
 
+[autoload]
+
+GameState="*res://game_state.gd"
+AudioDirector="*res://audio_director.gd"
+
 [display]
 
 window/size/viewport_width=1920
