@@ -1,6 +1,7 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1"]
+[ext_resource type="Script" path="res://boot_guard.gd" id="2"]
 
 [sub_resource type="StandardMaterial3D" id="GroundMaterial"]
 albedo_color = Color(0.18, 0.27, 0.19, 1)
@@ -48,3 +49,6 @@ mesh = SubResource("BuildingMesh")
 position = Vector3(19, 5, -18)
 scale = Vector3(1.8, 1.25, 1.5)
 mesh = SubResource("BuildingMesh")
+
+[node name="BootGuard" type="Node" parent="."]
+script = ExtResource("2")
