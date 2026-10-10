@@ -22,9 +22,14 @@ func _ready() -> void:
 
 func _make_overlay() -> void:
     card = PanelContainer.new()
-    card.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-    card.position = Vector2(50, -245)
-    card.size = Vector2(-100, 190)
+    card.anchor_left = 0.03
+    card.anchor_top = 0.76
+    card.anchor_right = 0.97
+    card.anchor_bottom = 0.97
+    card.offset_left = 0
+    card.offset_top = 0
+    card.offset_right = 0
+    card.offset_bottom = 0
     card.visible = false
     add_child(card)
     var column := VBoxContainer.new()
