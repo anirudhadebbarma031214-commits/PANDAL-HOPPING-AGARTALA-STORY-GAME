@@ -1,0 +1,68 @@
+name: Build BHARAT City of Three (Windows)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'BHARAT-CITY-OF-THREE/**'
+      - '.github/workflows/bharat-city-of-three-windows.yml'
+
+jobs:
+  build-windows:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Unpack Godot project and configure Windows export
+        shell: bash
+        run: |
+          mkdir -p /tmp/bharat
+          base64 --decode BHARAT-CITY-OF-THREE/project_bundle.b64 > /tmp/bharat/project.zip
+          unzip -q /tmp/bharat/project.zip -d /tmp/bharat
+          mv /tmp/bharat/bharat_city_of_three BHARAT-CITY-OF-THREE/project
+          mkdir -p BHARAT-CITY-OF-THREE/project/build
+          cat > BHARAT-CITY-OF-THREE/project/export_presets.cfg <<'PRESET'
+          [preset.0]
+          name="Windows Desktop"
+          platform="Windows Desktop"
+          runnable=true
+          dedicated_server=false
+          custom_features=""
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="build/BHARAT_CITY_OF_THREE.exe"
+          encryption_include_filters=""
+          encryption_exclude_filters=""
+          encrypt_pck=false
+          encrypt_directory=false
+
+          [preset.0.options]
+          custom_template/debug=""
+          custom_template/release=""
+          debug/export_console_wrapper=1
+          binary_format/64_bits=true
+          binary_format/embed_pck=true
+          texture_format/bptc=false
+          texture_format/s3tc=true
+          texture_format/etc=false
+          texture_format/etc2=false
+          PRESET
+
+      - name: Export Windows game
+        run: |
+          docker run --rm             -v "$PWD/BHARAT-CITY-OF-THREE/project:/project"             barichello/godot-ci:4.3             godot --headless --path /project --export-release "Windows Desktop" /project/build/BHARAT_CITY_OF_THREE.exe
+
+      - name: Package playable Windows build
+        run: |
+          cd BHARAT-CITY-OF-THREE/project/build
+          zip -q BHARAT_CITY_OF_THREE_Windows.zip BHARAT_CITY_OF_THREE.exe
+          cd "$GITHUB_WORKSPACE"
+
+      - name: Upload playable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: BHARAT-CITY-OF-THREE-Windows
+          path: BHARAT-CITY-OF-THREE/project/build/BHARAT_CITY_OF_THREE_Windows.zip
+          if-no-files-found: error
+          retention-days: 14
